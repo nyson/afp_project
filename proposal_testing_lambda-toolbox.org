@@ -1,3 +1,38 @@
-#+TITLE: Project Proposal AFP - Testing lambda-toolbox
+#+TITLE: Inductive Testing over Lambda Calculus
+#+AUTHOR: Jonathan Skårstedt and Henrik Steenari 
+#+EMAIL: jonathan.skarstedt@gmail.com, hugosteenari@gmail.com
+#+OPTIONS: toc:nil
 
-* 
+* Inductive Testing on Lambda Calculus 
+Lambda Calculus is the basis for functional programming. Lambda Calculus 
+concists of expressions in the form $(\lambda{x.x})$ with a set of simple 
+reduction rules, alpha and beta reduction. 
+
+Inductive testing is a strategy for applying inductive reasoning into the
+realm of testing. An inductive proof is constructed by proving base cases
+and proving inductive cases leading to these base cases, and inductive testing
+folllows the same principles. We have to create an environment for testing
+base cases and testing inductive cases and believe that lambda calculus gives
+us a good basis for this. 
+
+As a proof of concept, inductive testing can be performed on lambda 
+expressions, proving simple base cases like alpha equivalence and using 
+testing for reducing our expressions down to this level.
+
+* How we plan to go about it 
+There's a lambda calculus package on hackage, lambda-toolbox*, 
+that aims on being an education tool for students learning lambda calculus. 
+The package is an executable, but we would probably repackage some parts as a library.
+
+The inductive testing part is partly as a suggestion from some of the office
+hours, and we're not quite sure on how to go about it; however, it seems very
+interesting and we're very interested in testing it out.
+
+
+* References 
+  + lambda-toolbox: https://hackage.haskell.org/package/lambda-toolbox
+
+
+
+
+
