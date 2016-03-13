@@ -1,17 +1,7 @@
 module Toolbox where
 
-data Lambda = Func String Lambda | Expr [Lambda] | Name String
-
-type Equation    = [(TraceSymbol, Lambda)]
-
-data TraceSymbol = AlphaConversion (Name String) (Name String)
-                 | BetaConversion (Name String) (Expr Lambda)
-                 | EtaConversion (Name String) Lambda
--- AlphaConversion (Old Name) (New Name)
--- BetaConversion  (Variable Changed) (Argument applied)
--- EtaConversion   (Function Replaced) (New expression)
-
-type Trace       = State Equation 
+import Types
+import Control.Monad.State.Lazy
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -158,14 +148,35 @@ alpha' forbidden func@(Func var def)
         where
             newName = findNewName var forbidden
 alpha' forbidden (Expr expr)    = Expr $ map (alpha2 forbidden) expr
-alpha' _ x              = x
+alpha' _          x             = x
 
-rename :: String -> String -> Lambda -> Trace eq
+rename :: String -> String -> Lambda -> Lambda
 rename a a' name@(Name _) = name
 rename a a' (Expr expr) = Expr $ map (rename a a') expr
 rename a a' func@(Func var def)
     | var == a  = Func a' $ replaceFree a (Name a') def
     | otherwise = Func var $ rename a a' def
+
+
+
+-- replaces all free variables with a given label (first argument)
+-- with the given lambda (second argument) in the third argument.
+-- returns the reduced lambda expression.
+replaceFree :: String -> Lambda -> Lambda -> Trace Lambda
+replaceFree var arg name@(Name n)
+    | var == n  = do
+                    runState (modify (++) [AlphaConversion var arg, arg])
+                    return arg
+    | otherwise = return name
+replaceFree var arg func@(Func var' def)
+--    | var == var' = func
+    | var == var' = do
+                    runState (modify (++) [AlphaConversion var func, func])
+                    return func
+    | otherwise   = return (Func var' $ replaceFree var arg def)
+--replaceFree var arg (Expr expr) = Expr $ map (replaceFree var arg) expr
+replaceFree var arg (Expr expr) = return (Expr $ map (replaceFree var arg) expr)
+
 
 findNewName :: String -> [String] -> String
 findNewName old forbidden
@@ -180,24 +191,18 @@ findNewName old forbidden
 
 -- Beta reduction
 
-data BetaResult = Reduced | Impossible | NeedsAlphaConversion
-    deriving (Show, Eq)
-
-beta :: Lambda -> (BetaResult, Lambda)
-beta = beta'
-
 -- finds an application in the expression or returns (Impossible, ...)
 -- if a possible application is found but can not be reduced
 -- without renaming, (NeedsAlphaConversion, ...) is returned.
-beta' :: Lambda -> (BetaResult, Lambda)
-beta' (Name n) = (Impossible, Name n)
-beta' (Func var def) = (result, Func var $ def')
-    where (result, def') = beta' def
-beta' expr@(Expr (Func var def : arg : rest)) = 
+beta :: Lambda -> (BetaResult, Lambda)
+beta (Name n) = (Impossible, Name n)
+beta (Func var def) = (result, Func var $ def')
+    where (result, def') = beta def
+beta expr@(Expr (Func var def : arg : rest)) = 
     if any (`elem` bound def) $ free arg
         then (NeedsAlphaConversion, expr)
         else (Reduced, norm $ Expr $ replaceFree var arg def : rest)
-beta' (Expr expr) = (result, Expr expr')
+beta (Expr expr) = (result, Expr expr')
     where (result, expr') = betaExpr [] expr
 
 -- beta' for an Expr, i.e. a list of Lambdas
@@ -208,18 +213,6 @@ betaExpr soFar (x:xs) = let (result, expr) = beta x in
         then betaExpr (x:soFar) xs
         else (result, reverse (expr:soFar) ++ xs)
 
--- replaces all free variables with a given label (first argument)
--- with the given lambda (second argument) in the third argument.
--- returns the reduced lambda expression.
-replaceFree :: String -> Lambda -> Lambda -> Lambda
-replaceFree var arg name@(Name n)
-    | var == n  = arg
-    | otherwise = name
-replaceFree var arg func@(Func var' def)
-    | var == var' = func
-    | otherwise   = Func var' $ replaceFree var arg def
-replaceFree var arg (Expr expr) = Expr $ map (replaceFree var arg) expr
-
 -- Eta reduction
 
 eta :: Lambda -> (Bool, Lambda)
@@ -227,8 +220,6 @@ eta func@(Func v1 (Expr (def : (Name v2) : [])))
     | v1 == v2 && not (v1 `elem` free def) = (True, def)
 eta x = (False, x)
 
-data Reduction = Alpha | Beta | Eta | None
-    deriving (Show, Eq)
 
 -- trace a complete reduction
 trace :: Lambda -> [(Reduction, Lambda)]
