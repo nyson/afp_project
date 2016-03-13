@@ -2,4 +2,8 @@ import Toolbox
 import Haste
 
 
-main = alert "Tjo!"
+
+main = do
+  putStrLn "Welcome to Lambda-Webbox!"
+
+  
