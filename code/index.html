@@ -14,6 +14,8 @@
 
       #log li {list-style-type: none;
       padding: 0; margin: 0;}
+
+      #log li:hover{background-color: #ddd}
       #expr {
       text-align: center;}
     </style>
@@ -26,12 +28,11 @@
     <div id=expr>
       <h3>Write a lambda expression here and press enter! </h3>
       <input type="text" id="lambda-expression"></input><br />
-      <button>alpha</button>
-      <button>beta</button>
-      <button>eta</button>
+      <button id="alpha">alpha</button>
+      <button id="beta" >beta</button>
+      <button id="eta"  >eta</button>
     </div>
     <ul id=log>
-      <li>Tjo!</li>
     </ul>
     
       
