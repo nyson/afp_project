@@ -1,7 +1,17 @@
 module Toolbox where
 
-
 data Lambda = Func String Lambda | Expr [Lambda] | Name String
+
+type Equation    = [(TraceSymbol, Lambda)]
+
+data TraceSymbol = AlphaConversion (Name String) (Name String)
+                 | BetaConversion (Name String) (Expr Lambda)
+                 | EtaConversion (Name String) Lambda
+-- AlphaConversion (Old Name) (New Name)
+-- BetaConversion  (Variable Changed) (Argument applied)
+-- EtaConversion   (Function Replaced) (New expression)
+
+type Trace       = State Equation 
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -31,6 +41,7 @@ instance Show Lambda where
             showExpr (x@(Func _ _):xs) = "(" ++ show x ++ ")" ++ showExpr xs
             showExpr (x@(Expr _):xs)   = "(" ++ show x ++ ")" ++ showExpr xs
             showExpr (x@(Name _):xs)   = show x ++ showExpr xs
+
 -- Parsing lambda strings (accepts literally *anything*)
 instance Read Lambda where
     readsPrec x = wrap . norm . fst . readExpr []
@@ -149,7 +160,7 @@ alpha' forbidden func@(Func var def)
 alpha' forbidden (Expr expr)    = Expr $ map (alpha2 forbidden) expr
 alpha' _ x              = x
 
-rename :: String -> String -> Lambda -> Lambda
+rename :: String -> String -> Lambda -> Trace eq
 rename a a' name@(Name _) = name
 rename a a' (Expr expr) = Expr $ map (rename a a') expr
 rename a a' func@(Func var def)
