@@ -1,3 +1,5 @@
+module Types where 
+
 data Lambda = Func String Lambda | Expr [Lambda] | Name String
 
 type Equation    = [(TraceSymbol, Lambda)]
