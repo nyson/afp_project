@@ -1,0 +1,110 @@
+license :: String 
+isLambda :: Char -> Bool
+isSpace :: Char -> Bool
+
+data Lambda = Func String Lambda | Expr [Lambda] | Name String
+
+instances Eq, Show, Read
+
+
+-- | “normalize” a lambda expression (without doing reductions)
+norm :: Lambda -> Lambda
+
+-- | list bound variables (names of abstractions)
+bound :: Lambda -> [String]
+
+-- | List free variables 
+free :: Lambda -> [String]
+
+-- | allfree - all free variables in an expression
+allfree :: Lambda -> [(Lambda, [String])]
+
+-- | expand macros (what is this?)
+expand :: [(String, Lambda)] -> Lambda -> Lambda
+
+-- | subst macros (what?)
+subst :: [(String, Lambda)] -> Lambda -> Lambda
+
+
+-- | Alpha conversion
+alpha :: Lambda -> Lambda
+
+-- | A list of bound variables, and a lambda to apply them to gives a lambda
+--    applies a rename of any free vars that conflict with free vars
+alpha2 :: [String] -> Lambda -> Lambda
+
+-- | A list of bound vars, guaranteed to not be conflicting with free vars 
+alpha' :: [String] -> Lambda -> Lambda
+
+-- | Renames a free variable in an expression
+rename :: String -> String -> Lambda -> Lambda
+
+-- | Finds a new name, which isn't equal to any in the string list
+--    or the first argument
+findNewName :: String -> [String] -> String
+
+data BetaResult = Reduced | Impossible | NeedsAlphaConversion
+    deriving (Show, Eq)
+
+-- | Performs a beta conversion
+beta :: Lambda -> (BetaResult, Lambda)
+
+-- | finds an application in the expression or returns (Impossible, ...)
+-- if a possible application is found but can not be reduced
+-- without renaming, (NeedsAlphaConversion, ...) is returned.
+beta' :: Lambda -> (BetaResult, Lambda)
+beta' (Name n) = undefined
+  -- Impossible, a name can not be reduced
+beta' (Func var def) = undefined
+  -- Result depends on if (beta' def) can be evaluated
+beta' expr@(Expr (Funct var def : arg : rest)) = undefined 
+  -- Checks if alphaconversion is needed or else performs a reduce
+beta' (Expr expr) = undefined
+  -- depends on betaExpr [] expr
+
+
+
+-- | beta reduce an expression, where an expression is a list of lambdas
+betaExpr :: [Lambda] -> [Lambda] -> (BetaResult, [Lambda])
+
+-- | replace a free variable 
+replaceFree :: String -> -- identifier 
+               Lambda -> -- lambda
+               Lambda -> -- lambda to replace the identifiers with
+               Lambda
+
+-- | eta reduce a lambda
+eta :: Lambda -> (Bool, Lambda)
+
+data Reduction = Alpha | Beta | Eta | None
+               deriving (Show, Eq)
+
+-- | Perform a complete reduction and perform a trace of it
+trace :: Lambda -> [(Reduction, Lambda)]
+
+-- | Debug function
+debug :: Lambda -> String 
+
+-- utility -------------------------------------------------------------------
+
+-- | Counts the last place of an element a in a list of as
+lastIndexOf :: Eq a => a -> [a] -> Int
+
+-- | Finds the index of an element in a list
+indexOf :: Eq a => a -> [a] -> Int
+
+-- | wat
+number :: Lambda -> Maybe Int
+
+-- | Swap positions in a tuple
+swap :: (a,b) -> (b,a)
+
+-- | A list of lambda macros
+macros' :: [(String, String, String)]
+macros :: [(String, Lambda)]
+
+-- | shows a trace ([(Reduction, Lambda)])
+showTrace :: (Lambda -> String) -> [(Reduction, Lambda)] -> [String]
+
+
+
