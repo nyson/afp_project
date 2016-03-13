@@ -161,7 +161,7 @@ repl macros state = do
         NewMacros m'    -> putStrLn "Macros changed." >> repl m' state
         Exit            -> putStrLn "Goodbye."
 
-eval :: [(String, Lambda)] -> String -> Lambda -> Action
+eval :: [(String, Lambda)] -> String -> Lambda -> Trace Action
 eval _      ""  expr  = Message $ show expr
 eval macros cmd expr
     | "a" >< "alpha"  = NewState $ alpha expr

@@ -1,7 +1,12 @@
-module Toolbox where
+module Toolbox (
+  Lambda(..),
+  Trace(..),
+  alpha, beta, eta,
+  norm
+  )where
 
 import Types
-import Control.Monad.State.Lazy
+import Data.Foldable (foldrM )
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -130,32 +135,36 @@ subst macros expr = subst' expr
 
 -- Alpha conversion
 
-alpha :: Lambda -> Lambda
+alpha :: Lambda -> Trace Lambda
 alpha expr = alpha2 (bound expr) expr
 
-alpha2 forbidden expr
-    | any (`elem` boundVars) $ freeVars = foldr (\v e -> rename v (newName v) e) expr' freeVars
-    | otherwise = expr'
-        where
-            expr'       = alpha' forbidden expr
-            boundVars   = bound expr'
-            freeVars    = free expr'
-            newName var = findNewName var (forbidden ++ freeVars ++ boundVars)
+alpha2 :: [String] -> Lambda -> Trace Lambda
+alpha2 forbidden expr = do
+  let expr'  = alpha' forbidden expr
+  boundVars <- bound <$> expr'
+  freeVars  <- free <$> expr'
+  if any (`elem` boundVars) freeVars
+    then do
+    let newName var = findNewName var (forbidden ++ freeVars ++ boundVars)
+    myExpr <- expr'
+    foldrM (\v e -> rename v (newName v) e) myExpr freeVars
+    else expr'
 
+alpha' :: [String] -> Lambda -> Trace Lambda
 alpha' forbidden func@(Func var def)
-    | var `elem` forbidden = alpha' forbidden $ rename var newName func
-    | otherwise            = Func var $ alpha2 (var:forbidden) def
+    | var `elem` forbidden = rename var newName func >>= alpha' forbidden 
+    | otherwise            = (Func var) <$> alpha2 (var:forbidden) def
         where
             newName = findNewName var forbidden
-alpha' forbidden (Expr expr)    = Expr $ map (alpha2 forbidden) expr
-alpha' _          x             = x
+alpha' forbidden (Expr expr)    = Expr <$> mapM (alpha2 forbidden) expr
+alpha' _          x             = return x
 
-rename :: String -> String -> Lambda -> Lambda
-rename a a' name@(Name _) = name
-rename a a' (Expr expr) = Expr $ map (rename a a') expr
+rename :: String -> String -> Lambda -> Trace Lambda
+rename a a' name@(Name _) = return name
+rename a a' (Expr expr) = Expr <$> mapM (rename a a') expr
 rename a a' func@(Func var def)
-    | var == a  = Func a' $ replaceFree a (Name a') def
-    | otherwise = Func var $ rename a a' def
+    | var == a  = replaceFree a (Name a') def >>= return . Func a'
+    | otherwise = rename a a' def >>= return . Func var
 
 
 
@@ -165,17 +174,21 @@ rename a a' func@(Func var def)
 replaceFree :: String -> Lambda -> Lambda -> Trace Lambda
 replaceFree var arg name@(Name n)
     | var == n  = do
-                    runState (modify (++) [AlphaConversion var arg, arg])
-                    return arg
+        addTrace (AlphaConversion var arg) arg
+        return arg
     | otherwise = return name
 replaceFree var arg func@(Func var' def)
 --    | var == var' = func
     | var == var' = do
-                    runState (modify (++) [AlphaConversion var func, func])
-                    return func
-    | otherwise   = return (Func var' $ replaceFree var arg def)
+        addTrace (AlphaConversion var func) func
+        return func
+    | otherwise   = do
+        replaced <- replaceFree var arg def
+        return (Func var' $ replaced)
 --replaceFree var arg (Expr expr) = Expr $ map (replaceFree var arg) expr
-replaceFree var arg (Expr expr) = return (Expr $ map (replaceFree var arg) expr)
+replaceFree var arg (Expr expr) = do
+  replaced <- mapM (replaceFree var arg) expr
+  return (Expr $ replaced)
 
 
 findNewName :: String -> [String] -> String
@@ -194,24 +207,31 @@ findNewName old forbidden
 -- finds an application in the expression or returns (Impossible, ...)
 -- if a possible application is found but can not be reduced
 -- without renaming, (NeedsAlphaConversion, ...) is returned.
-beta :: Lambda -> (BetaResult, Lambda)
-beta (Name n) = (Impossible, Name n)
-beta (Func var def) = (result, Func var $ def')
-    where (result, def') = beta def
+beta :: Lambda -> Trace (BetaResult, Lambda)
+beta (Name n) = return (Impossible, Name n)
+beta (Func var def) = do
+  (result, def') <- beta def
+  return (result, Func var $ def')
+   
 beta expr@(Expr (Func var def : arg : rest)) = 
     if any (`elem` bound def) $ free arg
-        then (NeedsAlphaConversion, expr)
-        else (Reduced, norm $ Expr $ replaceFree var arg def : rest)
-beta (Expr expr) = (result, Expr expr')
-    where (result, expr') = betaExpr [] expr
+    then return (NeedsAlphaConversion, expr)
+    else do
+      replaced <- replaceFree var arg def
+      return (Reduced, norm $ Expr $ replaced : rest)
+beta (Expr expr) = do
+  (result, expr') <- betaExpr [] expr
+  return $ (result, Expr expr')
+
 
 -- beta' for an Expr, i.e. a list of Lambdas
-betaExpr :: [Lambda] -> [Lambda] -> (BetaResult, [Lambda])
-betaExpr soFar [] = (Impossible, reverse soFar)
-betaExpr soFar (x:xs) = let (result, expr) = beta x in
-    if result == Impossible
-        then betaExpr (x:soFar) xs
-        else (result, reverse (expr:soFar) ++ xs)
+betaExpr :: [Lambda] -> [Lambda] -> Trace (BetaResult, [Lambda])
+betaExpr soFar [] = return (Impossible, reverse soFar)
+betaExpr soFar (x:xs) = do
+  (result, expr) <- beta x
+  if result == Impossible
+    then betaExpr (x:soFar) xs
+    else return $ (result, reverse (expr:soFar) ++ xs)
 
 -- Eta reduction
 
@@ -221,15 +241,15 @@ eta func@(Func v1 (Expr (def : (Name v2) : [])))
 eta x = (False, x)
 
 
--- trace a complete reduction
-trace :: Lambda -> [(Reduction, Lambda)]
-trace expr = case result of
-                Reduced              -> (Beta, expr')   : trace expr'
-                NeedsAlphaConversion -> (Alpha, alpha') : trace alpha'
-                Impossible           -> (None, expr)    : []
-    where
-        alpha'          = alpha $ norm expr
-        (result, expr') = beta  $ norm expr
+-- -- trace a complete reduction
+-- trace :: Lambda -> Trace [(Reduction, Lambda)]
+-- trace expr = case result of
+--                 Reduced              -> return $ (Beta, expr')   : trace expr'
+--                 NeedsAlphaConversion -> return $ (Alpha, alpha') : trace alpha'
+--                 Impossible           -> return $ (None, expr)    : []
+--     where
+--         alpha'          = alpha $ norm expr
+--         (result, expr') = beta  $ norm expr
 
 -- Debug a Lambda Expression
 debug :: Lambda -> String

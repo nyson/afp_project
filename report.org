@@ -1,0 +1,57 @@
+#+TITLE: Project Report - Lambdabox GUI with Traceable Equations
+#+AUTHOR: Jonathan Skårstedt and Henrik Steenari
+#+EMAIL: jonathan.skarstedt@gmail.com, hugosteenari@gmail.com
+#+OPTIONS: toc:nil
+
+* Introduction
+We are not done yet, our project still needs some work. The main reason for 
+this is that we underestimated Lambda Toolbox, and overestimated our time.
+
+* Modification
+Our modification resulted in wrapping lots of Lambda Toolbox functions in monadic
+wrappers for collecting a trace of operations as a side effect. We choose 
+the StateT monad transformer with IO for this task, with a possible goal 
+to reduce it to WriterT and IO, or maybe even Writer in the future.
+
+* Problems 
+We noticed quite early that Lambda Toolbox was not the easiest to understand. 
+Lambda Toolbox is written as an executable and it was made clear that the code
+was not meant to be understood by more than the maintainer, and it is our 
+belief that Lambda Toolbox wasn't written over a longer period of time.
+
+The code existed just in one file, with no separation of concerns. This single
+file is a mishmash of a console application and a lambda calculus calculator.
+The code is pretty badly documented and there exists several top level 
+declarations which seems to have the same purpose, for example the functions 
+\emph{alpha}, \emph{alpha'} and {alpha2}; or the definition 
+\emph{beta = beta'}, where \emph{beta} and \emph{beta'} has identical 
+type signatures.
+
+* Project Status
+In this writing moment, we have separated lambda calculus functions and 
+the code of the lambda-toolbox executable. The library uses our monad, 
+=type Trace = StateT Equation IO=, which has lead to that the code for the 
+console application currently is broken, this may not be fixed as 
+it is out of scope for this project. We have created a minor Haste
+application (see index.html and Site.hs) which should be seen as a somewhat 
+interactive wireframe, not a finished product.
+
+* Where we want to go next
+Neither goals are currently finished, although the eDSL is more finished than 
+the GUI. A minor finished eDSL should concist of exports of alpha, beta and 
+eta, to perform basic lambda calculus operations. Also, a function for reading
+lambda expression from strings is needed, but that would be easy to wrap with
+the Read Lambda instance given by Lambda Toolbox.
+
+For the GUI, we want to be able to read valid lambda expressions and parse 
+them accordingly, and perform valid lambda calculus operations on them.
+
+As a sub priority, we want to restore functionality of the original 
+lambda-toolbox using our model which includes separation of concerns
+
+
+
+
+
+
+

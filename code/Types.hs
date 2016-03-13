@@ -13,7 +13,7 @@ data TraceSymbol = AlphaConversion String Lambda
 -- BetaConversion  (Variable Changed) (Argument applied)
 -- EtaConversion   (Function Replaced) (New expression)
 
-type Trace       = State Equation 
+type Trace       = StateT Equation IO
 
 
 data BetaResult = Reduced | Impossible | NeedsAlphaConversion
@@ -22,3 +22,6 @@ data BetaResult = Reduced | Impossible | NeedsAlphaConversion
 
 data Reduction = Alpha | Beta | Eta | None
     deriving (Show, Eq)
+
+addTrace :: TraceSymbol -> Lambda -> Trace ()
+addTrace ts lam = modify (++ [(ts, lam)])
