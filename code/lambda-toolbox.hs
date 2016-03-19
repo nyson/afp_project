@@ -1,7 +1,7 @@
 {- LambdaToolbox - Version and Copyright information below -}
 
 import Toolbox 
-
+import Types
 import System.IO
 import System.Info
 
@@ -41,7 +41,7 @@ license = "LambdaToolbox v1.0.1"
 
 
 
-showMacros = unlines [n ++ " ≡ " ++ m ++ "\n  " ++ d | (n, m, d) <- macros']
+showMacros = unlines [n ++ " ≡ " ++ m ++ "\n  " ++ d | (n, m, d) <- macros]
 
 showMacroList [] = "No macros defined."
 showMacroList m  = "\n" ++ unlines [n ++ " ≡ " ++ show m | (n, m) <- m]

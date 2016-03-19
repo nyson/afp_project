@@ -2,11 +2,20 @@ module Toolbox (
   Lambda(..),
   Trace(..),
   alpha, beta, eta,
-  norm
+  norm,
+  macros,
+  isLambda, isSpace,
+  subst,
+  showTrace,
+  expand,
+--  trace,
+  free, allfree,
+  debug
   )where
 
 import Types
 import Data.Foldable (foldrM )
+import Data.Functor
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -111,6 +120,50 @@ allfree func@(Func _ def) = if freeVars /= []
 allfree (Expr expr) = concat $ map allfree expr
 allfree (Name _) = []
 
+
+-- replaces all free variables with a given label (first argument)
+-- with the given lambda (second argument) in the third argument.
+-- returns the reduced lambda expression.
+replaceFree :: String -> Lambda -> Lambda -> Trace Lambda
+replaceFree var arg name@(Name n)
+    | var == n  = do
+        addTrace (AlphaConversion var arg) arg
+        return arg
+    | otherwise = return name
+
+replaceFree var arg func@(Func var' def)
+--    | var == var' = func
+    | var == var' = do
+        addTrace (AlphaConversion var func) func
+        return func
+    | otherwise   = do
+        replaced <- replaceFree var arg def
+        return (Func var' $ replaced)
+
+--replaceFree var arg (Expr expr) = Expr $ map (replaceFree var arg) expr
+replaceFree var arg (Expr expr) = do
+  replaced <- mapM (replaceFree var arg) expr
+  return (Expr $ replaced)
+
+
+findNewName :: String -> [String] -> String
+findNewName old forbidden
+    | alt == [] = [new | n <- [1..], new <- [old ++ show n], not (elem new forbidden)] !! 0
+    | otherwise = alt !! 0
+        where
+            alt
+                | length old == 1 = newLetter (old !! 0)
+                | otherwise       = newLetter 'a'
+            newLetter start = let source = [start..'z'] ++ ['a'..start]
+                in [ [a] | a <- source, not (elem [a] forbidden)]
+
+rename :: String -> String -> Lambda -> Trace Lambda
+rename a a' name@(Name _) = return name
+rename a a' (Expr expr) = Expr <$> mapM (rename a a') expr
+rename a a' func@(Func var def)
+    | var == a  = replaceFree a (Name a') def >>= return . Func a'
+    | otherwise = rename a a' def >>= return . Func var
+
 -- | Expand macros
 expand :: [(String, Lambda)] -> Lambda -> Lambda
 expand macros expr@(Name name) =
@@ -159,49 +212,6 @@ alpha' forbidden func@(Func var def)
 alpha' forbidden (Expr expr)    = Expr <$> mapM (alpha2 forbidden) expr
 alpha' _          x             = return x
 
-rename :: String -> String -> Lambda -> Trace Lambda
-rename a a' name@(Name _) = return name
-rename a a' (Expr expr) = Expr <$> mapM (rename a a') expr
-rename a a' func@(Func var def)
-    | var == a  = replaceFree a (Name a') def >>= return . Func a'
-    | otherwise = rename a a' def >>= return . Func var
-
-
-
--- replaces all free variables with a given label (first argument)
--- with the given lambda (second argument) in the third argument.
--- returns the reduced lambda expression.
-replaceFree :: String -> Lambda -> Lambda -> Trace Lambda
-replaceFree var arg name@(Name n)
-    | var == n  = do
-        addTrace (AlphaConversion var arg) arg
-        return arg
-    | otherwise = return name
-replaceFree var arg func@(Func var' def)
---    | var == var' = func
-    | var == var' = do
-        addTrace (AlphaConversion var func) func
-        return func
-    | otherwise   = do
-        replaced <- replaceFree var arg def
-        return (Func var' $ replaced)
---replaceFree var arg (Expr expr) = Expr $ map (replaceFree var arg) expr
-replaceFree var arg (Expr expr) = do
-  replaced <- mapM (replaceFree var arg) expr
-  return (Expr $ replaced)
-
-
-findNewName :: String -> [String] -> String
-findNewName old forbidden
-    | alt == [] = [new | n <- [1..], new <- [old ++ show n], not (elem new forbidden)] !! 0
-    | otherwise = alt !! 0
-        where
-            alt
-                | length old == 1 = newLetter (old !! 0)
-                | otherwise       = newLetter 'a'
-            newLetter start = let source = [start..'z'] ++ ['a'..start]
-                in [ [a] | a <- source, not (elem [a] forbidden)]
-
 -- Beta reduction
 
 -- finds an application in the expression or returns (Impossible, ...)
@@ -219,6 +229,7 @@ beta expr@(Expr (Func var def : arg : rest)) =
     else do
       replaced <- replaceFree var arg def
       return (Reduced, norm $ Expr $ replaced : rest)
+
 beta (Expr expr) = do
   (result, expr') <- betaExpr [] expr
   return $ (result, Expr expr')
