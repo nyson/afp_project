@@ -1,3 +1,5 @@
+#+LATEX_HEADER: \usepackage{listings} \lstset{language=Haskell}
+
 #+TITLE: Project Report - Lambdabox GUI with Traceable Equations
 #+AUTHOR: Jonathan Skårstedt and Henrik Steenari
 #+EMAIL: jonathan.skarstedt@gmail.com, hugosteenari@gmail.com
@@ -14,11 +16,37 @@ the StateT monad transformer with IO for this task, with a possible goal
 to reduce it to WriterT and IO, or maybe even Writer in the future.
 
 * A transformation to a DSL
+From the original lambda-toolbox.hs file, we've extracted the functionality
+into two files; Toolbox.hs the original lambda-toolbox file. Lambda-Toolbox
+already had (a somewhat boring) way to produce traces but we are interested
+into producing these traces by the use of a monad which collects the equation
+as a side effect. 
 
-We separated the functions for handling the console and the functions that
-handles the Lambda Calculus calculations into two files, we also put all the
-types in a separate file.
+\begin{lstlisting}
+data TraceSymbol = ... 
+data Lambda = Func String Lambda | Expr [Lambda] | Name String
+type Equation = [(TraceSymbol, Lambda)]
+type Trace = StateT Equation IO
+\end{lstlisting}
 
+\emph{TraceSymbol} is symbols that define operations over lambdas, such as
+alpha, beta and eta conversions. \emph{Equation} is a list of lambda 
+expresisons tupled with a \emph{TraceSymbol} representing the type of 
+conversion used to create the lambda expression. 
+
+The \emph{Trace} is a monad defining the DSL, in which all the conversions of
+the lambda expressions can take place. 
+
+\begin{lstlisting}
+alpha :: Lambda -> Trace Lambda
+beta :: Lambda -> Trace (BetaResult, Lambda)
+eta :: Lambda -> Trace (Bool, Lambda)
+\end{lstlisting}
+
+\emph{alpha} performs a rename of the top level bound variables, \emph{beta} 
+performs an application of the lambda expression and \emph{eta} makes the 
+expression point free, as in 
+\lambda x \rightarrow fun x \Longrightarrow_{eta} fun.
 
 * Problems 
 We noticed quite early that Lambda Toolbox was not the easiest to understand. 
