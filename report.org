@@ -13,6 +13,8 @@ wrappers for collecting a trace of operations as a side effect. We choose
 the StateT monad transformer with IO for this task, with a possible goal 
 to reduce it to WriterT and IO, or maybe even Writer in the future.
 
+* A transformation to a DSL
+
 We separated the functions for handling the console and the functions that
 handles the Lambda Calculus calculations into two files, we also put all the
 types in a separate file.
@@ -55,7 +57,7 @@ For the GUI, we want to be able to read valid lambda expressions and parse
 them accordingly, and perform valid lambda calculus operations on them.
 
 As a sub priority, we want to restore functionality of the original 
-lambda-toolbox using our model which includes separation of concerns
+lambda-toolbox using our library model which includes separation of concerns.
 
 
 
