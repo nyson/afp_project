@@ -13,6 +13,11 @@ wrappers for collecting a trace of operations as a side effect. We choose
 the StateT monad transformer with IO for this task, with a possible goal 
 to reduce it to WriterT and IO, or maybe even Writer in the future.
 
+We separated the functions for handling the console and the functions that
+handles the Lambda Calculus calculations into two files, we also put all the
+types in a separate file.
+
+
 * Problems 
 We noticed quite early that Lambda Toolbox was not the easiest to understand. 
 Lambda Toolbox is written as an executable and it was made clear that the code
@@ -26,6 +31,9 @@ declarations which seems to have the same purpose, for example the functions
 \emph{alpha}, \emph{alpha'} and {alpha2}; or the definition 
 \emph{beta = beta'}, where \emph{beta} and \emph{beta'} has identical 
 type signatures.
+
+We had to rewrite some of the functions so that we could trace the reductions
+that the toolbox made. One function that we rewrote was rename
 
 * Project Status
 In this writing moment, we have separated lambda calculus functions and 
