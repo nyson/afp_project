@@ -16,7 +16,8 @@ module Toolbox (
 import Types
 import Data.Foldable (foldrM )
 import Data.Functor
-import Data.Read
+import Text.Read
+import Control.Monad (when)
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -219,20 +220,21 @@ alpha' _          x             = return x
 
 -- Beta reduction
 
--- finds an application in the expression or returns (Impossible, ...)
+-- | Finds an application in the expression or returns (Impossible, ...)
 -- if a possible application is found but can not be reduced
 -- without renaming, (NeedsAlphaConversion, ...) is returned.
 beta :: Lambda -> Trace (BetaResult, Lambda)
 beta (Name n) = return (Impossible, Name n)
 beta (Func var def) = do
   (result, def') <- beta def
-  return (result, Func var $ def')
+  return (result, Func var def')
    
 beta expr@(Expr (Func var def : arg : rest)) = 
     if any (`elem` bound def) $ free arg
     then return (NeedsAlphaConversion, expr)
     else do
       replaced <- replaceFree var arg def
+      addTrace BetaConversion (norm $ Expr $ replaced : rest)
       return (Reduced, norm $ Expr $ replaced : rest)
 
 beta (Expr expr) = do

@@ -9,7 +9,7 @@ data Lambda = Func String Lambda | Expr [Lambda] | Name String
 type Equation    = [(TraceSymbol, Lambda)]
 
 data TraceSymbol = AlphaConversion String Lambda
-                 | BetaConversion String Lambda
+                 | BetaConversion
                  | EtaConversion String Lambda
 -- AlphaConversion (Old Name) (New Name)
 -- BetaConversion  (Variable Changed) (Argument applied)
@@ -22,7 +22,7 @@ type Trace       = StateT Equation IO
 --    that will continue the equation
 data BetaResult = Reduced | Impossible | NeedsAlphaConversion
     deriving (Show, Eq)
-
+             
 -- | There's three possible reductions (and conversions) on a lambda expression
 --    Alpha: change the name on the arguments
 --    Beta: apply the function

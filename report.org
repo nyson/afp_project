@@ -1,4 +1,4 @@
-#+LATEX_HEADER: \usepackage{listings} \lstset{language=Haskell}
+#+LATEX_HEADER: \usepackage{listings} \usepackage{mathtools} \lstset{language=Haskell}
 
 #+TITLE: Project Report - Lambdabox GUI with Traceable Equations
 #+AUTHOR: Jonathan Skårstedt and Henrik Steenari
@@ -45,28 +45,28 @@ beta :: Lambda -> Trace (BetaResult, Lambda)
 eta :: Lambda -> Trace (Bool, Lambda)
 \end{lstlisting}
 
-+  =readLambda= is of type =readLambda \doublecolon String -> Maybe Lambda= and 
++ =readLambda= is of type =String -> Maybe Lambda= and 
   returns a lambda expression from a string.
 
 + =alpha= performs a rename of the top level bound variables: \\
   y is not bound in the lambda expression \\
   \lambda x \rightarrow x \Longrightarrow_{alpha} \lambda y \rightarrow y
 
-  =alpha= is of type =alpha :: Lambda -> Trace Lambda=, as there's always a
+  =alpha= is of type =Lambda -> Trace Lambda=, as there's always a
   new string to exchange the old arguments.
 
 + =beta= performs an application of the lambda expression from some 
   arguments: \\
   \lambda x -> x [y] \Longrightarrow_{beta} y
 
-  =beta= has the type =beta :: Lambda -> Trace (BetaResult, Lambda)=
+  =beta= has the type =Lambda -> Trace (BetaResult, Lambda)=
 
 + =eta= makes the expression point free, as in \\
   \lambda x \rightarrow fun x \Longrightarrow_{eta} fun.
 
-  =eta= has the type =eta :: Lambda -> Trace (Bool, Lambda)= where the boolean
+  =eta= has the type =Lambda -> Trace (Bool, Lambda)= where the boolean
   is indicative if the function can be reduced to point free style. This type
-  should be changed to =eta :: Lambda -> Trace (Maybe Lambda)= instead, as
+  should be changed to =Lambda -> Trace (Maybe Lambda)= instead, as
   returning a Lambda when not doing an operation is bad style.
 
 ** The goal of the EDSL
@@ -74,6 +74,20 @@ The goal of the Trace monad is to build up a trace in any conversion of a
 lambda expression, and be able to replay any such trace. In our project we 
 will create a small web application where we can perform conversion on small
 lambda expressions.
+
+** Differences from the original Lambda Toolbox
+The functions =alpha=, =beta= and =eta= already exist in Lambda Toolbox, but
+our addition is the Trace encapsulation and adding a trace. =readLambda= is 
+a new addition, although it's only a thin wrapper around the Read instance 
+of the Lambda type in Lambda Toolbox.
+
+We have removed the console application as it's out scope for our current 
+project, but a possible future work would be to reimplement it using our 
+current Trace type. 
+
+The Lambda Toolbox code can be fetched from 
+https://hackage.haskell.org/package/lambda-toolbox, but the darcs link seems
+to be broken.
 
 * Problems 
 We noticed quite early that code base for Lambda Toolbox was not the easiest 
@@ -113,6 +127,9 @@ application (see index.html and Site.hs) which should be seen as a somewhat
 interactive wireframe, not a finished product.
 
 Due to lack of time we have not tested the code we changed.
+
+* Usage instructions
+
 
 * Where we want to go next
 Neither goals are currently finished, although the eDSL is more finished than 
