@@ -112,8 +112,7 @@ it is out of scope for this project. We have created a minor Haste
 application (see index.html and Site.hs) which should be seen as a somewhat 
 interactive wireframe, not a finished product.
 
-As we did not modify beta and eta to add to the trace, which we wanted
-but as we did not expect the need to rewrite so much of the code.
+Due to lack of time we have not tested the code we changed.
 
 * Where we want to go next
 Neither goals are currently finished, although the eDSL is more finished than 
@@ -128,9 +127,4 @@ them accordingly, and perform valid lambda calculus operations on them.
 As a sub priority, we want to restore functionality of the original 
 lambda-toolbox using our library model which includes separation of concerns.
 
-
-
-
-
-
-
+We do need to test the code and fix the possible bugs that exists.
