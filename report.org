@@ -35,7 +35,17 @@ declarations which seems to have the same purpose, for example the functions
 type signatures.
 
 We had to rewrite some of the functions so that we could trace the reductions
-that the toolbox made. One function that we rewrote was rename
+that the toolbox made. We modified the replaceFree function so it adds all the
+Alpha Conversions to the trace.
+
+We removed the beta function and renamed beta' to beta as the original
+beta function just passed on it's input to beta'. We did not modify beta so it
+adds each step of the of the beta reduction as we would need to rewrite the
+whole function.
+
+We did not modify the eta function, which is responsible for eta reductions,
+because we would need to rewrite the whole function to add the reductions to
+the trace.
 
 * Project Status
 In this writing moment, we have separated lambda calculus functions and 
@@ -45,6 +55,9 @@ console application currently is broken, this may not be fixed as
 it is out of scope for this project. We have created a minor Haste
 application (see index.html and Site.hs) which should be seen as a somewhat 
 interactive wireframe, not a finished product.
+
+As we did not modify beta and eta to add to the trace, which we wanted
+but as we did not expect the need to rewrite so much of the code.
 
 * Where we want to go next
 Neither goals are currently finished, although the eDSL is more finished than 
