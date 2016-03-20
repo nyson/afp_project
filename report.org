@@ -129,7 +129,19 @@ interactive wireframe, not a finished product.
 Due to lack of time we have not tested the code we changed.
 
 * Usage instructions
+** Installation
+We have distributed our code in a cabal project which, when installed with
+haste-cabal, will generate a JavaScript file which can be used in our HTML 
+file, index.html, which is included in the distribution.
 
+** The GUI
+The GUI is, as mentioned before, just an interactive wireframe without any
+assigned functionality. There is a text-input where you're ment to enter a
+lambda expression and, if it is well formed, you can apply alpha, eta and beta
+rules on it using the buttons.
+
+Below the inputs, there will be a log of earlier lambda expressions, which
+you may click to enter an earlier expression in the equation. 
 
 * Where we want to go next
 Neither goals are currently finished, although the eDSL is more finished than 
