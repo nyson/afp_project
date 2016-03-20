@@ -22,6 +22,7 @@ already had (a somewhat boring) way to produce traces but we are interested
 into producing these traces by the use of a monad which collects the equation
 as a side effect. 
 
+** Trace it!
 \begin{lstlisting}
 data TraceSymbol = ... 
 data Lambda = Func String Lambda | Expr [Lambda] | Name String
@@ -34,6 +35,7 @@ alpha, beta and eta conversions. \emph{Equation} is a list of lambda
 expresisons tupled with a \emph{TraceSymbol} representing the type of 
 conversion used to create the lambda expression. 
 
+** EDSL functions 
 The \emph{Trace} is a monad defining the DSL, in which all the conversions of
 the lambda expressions can take place. 
 
@@ -43,22 +45,48 @@ beta :: Lambda -> Trace (BetaResult, Lambda)
 eta :: Lambda -> Trace (Bool, Lambda)
 \end{lstlisting}
 
-\emph{alpha} performs a rename of the top level bound variables, \emph{beta} 
-performs an application of the lambda expression and \emph{eta} makes the 
-expression point free, as in 
-\lambda x \rightarrow fun x \Longrightarrow_{eta} fun.
++  =readLambda= is of type =readLambda \doublecolon String -> Maybe Lambda= and 
+  returns a lambda expression from a string.
+
++ =alpha= performs a rename of the top level bound variables: \\
+  y is not bound in the lambda expression \\
+  \lambda x \rightarrow x \Longrightarrow_{alpha} \lambda y \rightarrow y
+
+  =alpha= is of type =alpha :: Lambda -> Trace Lambda=, as there's always a
+  new string to exchange the old arguments.
+
++ =beta= performs an application of the lambda expression from some 
+  arguments: \\
+  \lambda x -> x [y] \Longrightarrow_{beta} y
+
+  =beta= has the type =beta :: Lambda -> Trace (BetaResult, Lambda)=
+
++ =eta= makes the expression point free, as in \\
+  \lambda x \rightarrow fun x \Longrightarrow_{eta} fun.
+
+  =eta= has the type =eta :: Lambda -> Trace (Bool, Lambda)= where the boolean
+  is indicative if the function can be reduced to point free style. This type
+  should be changed to =eta :: Lambda -> Trace (Maybe Lambda)= instead, as
+  returning a Lambda when not doing an operation is bad style.
+
+** The goal of the EDSL
+The goal of the Trace monad is to build up a trace in any conversion of a  
+lambda expression, and be able to replay any such trace. In our project we 
+will create a small web application where we can perform conversion on small
+lambda expressions.
 
 * Problems 
-We noticed quite early that Lambda Toolbox was not the easiest to understand. 
-Lambda Toolbox is written as an executable and it was made clear that the code
-was not meant to be understood by more than the maintainer, and it is our 
-belief that Lambda Toolbox wasn't written over a longer period of time.
+We noticed quite early that code base for Lambda Toolbox was not the easiest 
+to understand. Lambda Toolbox is written as an executable and it was made 
+clear that the code was not meant to be understood by anyone else than the 
+maintainer, and it is our belief that Lambda Toolbox wasn't written over a 
+longer period of time.
 
 The code existed just in one file, with no separation of concerns. This single
 file is a mishmash of a console application and a lambda calculus calculator.
 The code is pretty badly documented and there exists several top level 
 declarations which seems to have the same purpose, for example the functions 
-\emph{alpha}, \emph{alpha'} and {alpha2}; or the definition 
+\emph{alpha}, \emph{alpha'} and \emph{alpha2}; or the definition 
 \emph{beta = beta'}, where \emph{beta} and \emph{beta'} has identical 
 type signatures.
 

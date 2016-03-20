@@ -16,6 +16,7 @@ module Toolbox (
 import Types
 import Data.Foldable (foldrM )
 import Data.Functor
+import Data.Read
 
 isLambda = (`elem` "λ/^\\")
 isSpace  = (`elem` " \t\n")
@@ -84,6 +85,10 @@ instance Read Lambda where
                     let (expr, rest) = readFunc xs
                     in (Func [x] expr, rest)
 
+
+-- | reads a lambda
+readLambda :: String -> Maybe Lambda
+readLambda = readMaybe
 
 -- “normalize” a lambda expression (without doing reductions)
 norm :: Lambda -> Lambda

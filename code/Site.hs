@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
--- import Toolbox
+import Toolbox
 import Haste
 import Haste.DOM
 import Haste.Events
